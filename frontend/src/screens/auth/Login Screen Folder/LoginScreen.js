@@ -97,7 +97,7 @@
   root.innerHTML = [
     '<div id="gather-page">',
 
-      // Left panel
+      // Left panel (color = #1D9E75)
       '<div id="gather-left">',
         '<div class="g-brand">',
           '<div class="g-brand-icon">',
@@ -106,17 +106,17 @@
               '<path d="M6 10h8M10 6v8" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"/>',
             '</svg>',
           '</div>',
-          '<span class="g-brand-name">Gather</span>',
+          '<span class="g-brand-name">Gather</span>', // Name on top left
         '</div>',
         '<div>',
-          '<div class="g-headline">Plans that<br/><em>actually</em><br/>happen.</div>',
-          '<p class="g-subtext">Stop losing the plan in a 47-message thread. Gather gets your group to a confirmed time, place, and headcount — fast.</p>',
+          '<div class="g-headline">Plans that<br/><em>actually</em><br/>happen.</div>', // Motto on left panel
+          '<p class="g-subtext">Stop losing the plan in a 47-message thread. Gather gets your group to a confirmed time, place, and headcount — fast.</p>', //Smaller text under motto
         '</div>',
         '<div class="g-testimonial">',
-          '<p>"We used to spend 20 minutes just deciding where to eat. Now we confirm dinner in under two minutes."</p>',
+          '<p>"We used to spend 20 minutes just deciding where to eat. Now we confirm dinner in under two minutes."</p>', // Testimonial text
           '<div class="g-tauthor">',
             '<div class="g-avatar">AJ</div>',
-            '<div><div class="g-aname">Alex J.</div><div class="g-arole">Uses Gather weekly</div></div>',
+            '<div><div class="g-aname">Alex J.</div><div class="g-arole">Uses Gather weekly</div></div>', // Who said testimonial
           '</div>',
         '</div>',
       '</div>',
@@ -127,20 +127,20 @@
 
           // Error banner
           '<div id="g-error-banner">',
-            '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#C0392B" stroke-width="1.5"/><path d="M8 5v3.5M8 11h.01" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/></svg>',
+            '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#C0392B" stroke-width="1.5"/><path d="M8 5v3.5M8 11h.01" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/></svg>', //Error outline color #C0392B
             '<span id="g-error-text"></span>',
           '</div>',
 
-          '<h1 class="g-heading">Welcome back</h1>',
-          '<p class="g-sub">New here? <a href="#">Create an account</a></p>',
+          '<h1 class="g-heading">Welcome back</h1>', // Heading right panel
+          '<p class="g-sub">New here? <a href="#">Create an account</a></p>', // Subtext right panel with link to create account (not functional in this demo)
 
           // Email field
           '<div class="g-field">',
             '<label for="g-email">Email</label>',
             '<div class="g-input-wrap">',
-              '<input type="email" id="g-email" placeholder="you@example.com" autocomplete="email" />',
+              '<input type="email" id="g-email" placeholder="you@example.com" autocomplete="email" />', // Example email placeholder
               '<span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;">',
-                '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="#9AADA6" stroke-width="1.4"/><path d="M1 5.5l7 4.5 7-4.5" stroke="#9AADA6" stroke-width="1.4" stroke-linecap="round"/></svg>',
+                '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="#9AADA6" stroke-width="1.4"/><path d="M1 5.5l7 4.5 7-4.5" stroke="#9AADA6" stroke-width="1.4" stroke-linecap="round"/></svg>', // Color of placeholder email
               '</span>',
             '</div>',
             '<div class="g-field-err" id="g-email-err">Enter a valid email address.</div>',
@@ -150,7 +150,7 @@
           '<div class="g-field">',
             '<label for="g-password">Password</label>',
             '<div class="g-input-wrap">',
-              '<input type="password" id="g-password" placeholder="••••••••" autocomplete="current-password" />',
+              '<input type="password" id="g-password" placeholder="••••••••" autocomplete="current-password" />', // Password placeholder
               '<button class="g-icon-btn" id="g-pw-toggle" type="button" aria-label="Show password">',
                 '<svg id="g-eye-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/></svg>',
               '</button>',
@@ -159,9 +159,9 @@
           '</div>',
 
           // Forgot password
-          '<div class="g-forgot"><a href="#">Forgot password?</a></div>',
+          '<div class="g-forgot"><a href="#">Forgot password?</a></div>', // Forgot password link (not functional in this demo)
 
-          // Submit
+          // Submit or login button
           '<button id="g-submit" type="button">',
             '<span id="g-btn-text">Log in</span>',
             '<span id="g-spinner"></span>',
@@ -171,16 +171,16 @@
           '<div class="g-divider">or continue with</div>',
 
           // Social
-          '<button class="g-social" id="g-google-btn">',
+          '<button class="g-social" id="g-google-btn">', // Google button with logo
             '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908C16.658 14.233 17.64 11.925 17.64 9.2z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>',
-            'Continue with Google',
+            'Continue with Google', // Text for Google login button
           '</button>',
-          '<button class="g-social" id="g-apple-btn">',
+          '<button class="g-social" id="g-apple-btn">', // Apple button with logo
             '<svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M13.057 9.545c-.02-2.082 1.7-3.09 1.778-3.138-1.002-1.44-2.512-1.618-3.047-1.631-1.285-.134-2.527.763-3.182.763-.666 0-1.677-.75-2.762-.728C4.26 4.832 2.767 5.83 1.942 7.346.266 10.397 1.508 14.89 3.12 17.347c.81 1.177 1.775 2.492 3.04 2.445 1.224-.05 1.682-.787 3.16-.787 1.467 0 1.886.787 3.17.76 1.319-.023 2.148-1.179 2.94-2.364.94-1.358 1.321-2.686 1.34-2.754-.03-.012-2.56-.978-2.582-3.102z"/><path d="M10.906 2.76C11.565 1.962 12.01.87 11.876-.252 10.93-.205 9.79.392 9.101 1.175c-.617.695-1.162 1.828-1.015 2.895.996.074 2.02-.504 2.82-1.31z"/></svg>',
-            'Continue with Apple',
+            'Continue with Apple', // Text for Apple login button
           '</button>',
 
-          // Success (hidden)
+          // Success after login
           '<div id="g-success">',
             '<div class="g-success-icon">',
               '<svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 14l6 6 10-10" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -195,7 +195,7 @@
   ].join('');
 
   // ── 4. Wire up JavaScript logic ─────────────────────────────────────────
-  var emailInput   = document.getElementById('g-email');
+  var emailInput   = document.getElementById('g-email'); // Setting variables
   var passwordInput= document.getElementById('g-password');
   var emailErr     = document.getElementById('g-email-err');
   var pwErr        = document.getElementById('g-pw-err');
@@ -237,12 +237,12 @@
     return ok;
   }
 
-  emailInput.addEventListener('blur',  function () { validateEmail(true); });
+  emailInput.addEventListener('blur',  function () { validateEmail(true); }); // blur event when user clicks away from email input, triggers validation
   passwordInput.addEventListener('blur', function () { validatePassword(true); });
-  emailInput.addEventListener('input',   function () { if (emailInput.classList.contains('g-invalid'))    validateEmail(false); });
+  emailInput.addEventListener('input',   function () { if (emailInput.classList.contains('g-invalid'))    validateEmail(false); }); // input event triggers whenever user types or changes value, if field is already marked invalid, re-validate to update error state
   passwordInput.addEventListener('input',function () { if (passwordInput.classList.contains('g-invalid')) validatePassword(false); });
 
-  function setLoading(on) {
+  function setLoading(on) { // Loading On = "Logging in..." with spinner, Loading Off = "Log in" with no spinner
     submitBtn.disabled    = on;
     btnText.textContent   = on ? 'Logging in…' : 'Log in';
     spinner.style.display = on ? 'inline-block' : 'none';
@@ -293,7 +293,7 @@
     }, 1400);
   });
 
-  // Social buttons
+  // Social buttons (replaced with OAuth login flows in a real implementation, here we just show an alert)
   document.getElementById('g-google-btn').addEventListener('click', function () {
     alert('Connect your Google OAuth provider here.');
   });
