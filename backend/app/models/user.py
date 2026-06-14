@@ -49,6 +49,11 @@ class User(db.Model):
     # instead of writing a separate query every time.
     plans = db.relationship('Plan', backref='organizer', lazy=True)
 
+    # Update/Add these relationship lines inside your User class:
+    plans = db.relationship('Plan', backref='organizer', lazy=True)
+    availabilities = db.relationship('Availability', backref='user', lazy=True)
+    notifications = db.relationship('Notification', backref='user', lazy=True)
+
     # __repr__ is what Python prints when you do print(user) —
     # useful for debugging so you see something meaningful
     # instead of <User object at 0x...>
