@@ -47,7 +47,6 @@ class User(db.Model):
     # relationship() doesn't create a column — it's just a convenience
     # that lets you do user.plans to get all plans belonging to this user
     # instead of writing a separate query every time.
-    plans = db.relationship('Plan', backref='organizer', lazy=True)
 
     # Update/Add these relationship lines inside your User class:
     plans = db.relationship('Plan', backref='organizer', lazy=True)
