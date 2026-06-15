@@ -284,6 +284,15 @@
             children[i].style.display = 'none';
           }
           successEl.style.display = 'flex';
+        // ── Navigates to HomeScreen after a short delay ──────────────────
+        setTimeout(function () {
+          if (typeof window.showHomeScreen === 'function') {
+            window.showHomeScreen();
+          } else {
+            console.error("HomeScreen.js hasn't been loaded in index.html yet!");
+          }
+        }, 1500);
+        // ─────────────────────────────────────────────────────────────────
         } else {
           setLoading(false);
           showError("Those credentials didn't match. Try again.");
