@@ -44,6 +44,7 @@
         '.su-divider::before, .su-divider::after { content:""; flex:1; height:1px; background:#D6E8E1; }',
         '.su-social { width:100%; height:46px; border:1.5px solid #D6E8E1; background:#fff; border-radius:10px; font-size:14px; font-weight:500; font-family:Inter,sans-serif; color:#111714; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px; transition:background .15s; }',
         '.su-social:hover { background:#F6FAF8; border-color:#9AADA6; }',
+        '#su-error-banner { display:none; background:#FBEAEA; border:1px solid #F5C6C6; border-radius:10px; padding:12px 14px; font-size:13px; color:#C0392B; margin-bottom:20px; align-items:center; gap:8px; }',
       ].join('\n');
       document.head.appendChild(style);
     }
@@ -52,6 +53,11 @@
     root.innerHTML = [
       '<div id="su-page">',
         '<div id="su-card">',
+
+          '<div id="su-error-banner">',
+            '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#C0392B" stroke-width="1.5"/><path d="M8 5v3.5M8 11h.01" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/></svg>',
+            '<span id="su-error-text"></span>',
+          '</div>',
 
           '<div class="su-brand">',
             '<div class="su-brand-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#fff" stroke-width="2"/><path d="M6 10h8M10 6v8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>',
@@ -117,15 +123,17 @@
     var btnText        = document.getElementById('su-btn-text');
     var spinner        = document.getElementById('su-spinner');
     var pwToggle       = document.getElementById('su-pw-toggle');
+    var errorBanner    = document.getElementById('su-error-banner');
+    var errorText      = document.getElementById('su-error-text');
 
     // Go back to login
-    document.getElementById('su-goto-login').addEventListener('click', function (event) {
+    document.getElementById('su-goto-login').addEventListener('click', function () {
       if (typeof navigate === 'function') {
         navigate('login');
       } else if (typeof window.showLoginScreen === 'function') {
         window.showLoginScreen();
       } else {
-        console.error("Login screen function not found!");
+        console.error('Login screen function not found!');
       }
     });
 
@@ -157,7 +165,21 @@
       return ok;
     }
 
+    function showError(msg) {
+      errorText.textContent     = msg;
+      errorBanner.style.display = 'flex';
+    }
+
+    function setLoading(on) {
+      submitBtn.disabled    = on;
+      btnText.textContent   = on ? 'Creating account…' : 'Create account';
+      spinner.style.display = on ? 'inline-block' : 'none';
+    }
+
+    // ── Submit Action ────────────────────────────────────────────────────────
     submitBtn.addEventListener('click', function () {
+      errorBanner.style.display = 'none';
+
       var ok = [
         req(firstNameInput, firstNameErr),
         req(lastNameInput,  lastNameErr),
@@ -167,23 +189,33 @@
 
       if (!ok) return;
 
-      submitBtn.disabled    = true;
-      btnText.textContent   = 'Creating account…';
-      spinner.style.display = 'inline-block';
+      setLoading(true);
 
-      // Replace with real fetch() to your backend
-      setTimeout(function () {
-        if (typeof navigate === 'function') {
-          navigate('home');
-        } else if (typeof window.showHomeScreen === 'function') {
-          window.showHomeScreen();
-        } else {
-          alert('Account created! (HomeScreen connection not found yet)');
-          submitBtn.disabled    = false;
-          btnText.textContent   = 'Create account';
-          spinner.style.display = 'none';
-        }
-      }, 1400);
+      var firstName = firstNameInput.value.trim();
+      var lastName  = lastNameInput.value.trim();
+      var email     = emailInput.value.trim().toLowerCase();
+      var password  = passwordInput.value;
+
+      // ── Real API call to your backend ────────────────────────────────────
+      window.api.signup(firstName, lastName, email, password)
+        .then(function (data) {
+          setLoading(false);
+          if (data.success) {
+            if (typeof navigate === 'function') {
+              navigate('home');
+            } else if (typeof window.showHomeScreen === 'function') {
+              window.showHomeScreen();
+            } else {
+              console.error("HomeScreen.js hasn't been loaded in index.html yet!");
+            }
+          } else {
+            showError(data.message || 'Something went wrong. Please try again.');
+          }
+        })
+        .catch(function () {
+          setLoading(false);
+          showError('Could not reach the server. Please try again.');
+        });
     });
 
     document.getElementById('su-google').addEventListener('click', function () { alert('Connect your Google OAuth provider here.'); });
