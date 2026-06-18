@@ -15,6 +15,6 @@ def register_routes(app):
     # becomes /api/auth/register
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(plans_bp, url_prefix='/api/plans')
-    # app.register_blueprint(polls_bp, url_prefix='/api/polls')
-    # app.register_blueprint(availability_bp, url_prefix='/api/availability')
-    # app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
+    app.register_blueprint(polls_bp, url_prefix='/api/polls')
+    app.register_blueprint(availability_bp, url_prefix='/api/availability')
+    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
