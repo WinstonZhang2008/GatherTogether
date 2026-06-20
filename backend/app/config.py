@@ -30,3 +30,4 @@ class Config:
     # it to the frontend. the frontend sends it back with every
     # request to prove who they are.
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')

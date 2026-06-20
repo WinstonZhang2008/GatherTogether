@@ -16,8 +16,8 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=_utcnow)
 
     # LINKS: Connects to the receiver user and optional plan link
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'), nullable=True) # Optional link
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id', ondelete='CASCADE'), nullable=True)
 
     def __repr__(self):
         return f'<Notification For User:{self.user_id}>'

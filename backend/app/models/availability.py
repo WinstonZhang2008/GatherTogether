@@ -19,8 +19,8 @@ class Availability(db.Model):
     # updated whenever the user re-submits their grid selection
     updated_at = db.Column(db.DateTime, default=_utcnow, onupdate=_utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f'<Availability user:{self.user_id} plan:{self.plan_id}>'
