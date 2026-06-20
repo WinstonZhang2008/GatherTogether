@@ -45,6 +45,12 @@
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
 
+    // ── Account Dynamic Greeting ──────────────────────────────────────────────
+    var savedName = localStorage.getItem('gather_user_name');
+
+    var firstName = savedName ? savedName.trim() : "there";
+    var greetingStr = 'Hey ' + firstName + ' 👋';
+
     // ── HTML Injections ───────────────────────────────────────────────────────
     root.innerHTML = [
       '<div id="home-page">',
@@ -53,7 +59,7 @@
           '<div class="home-avatar" id="home-logout-trigger">AJ</div>',
         '</div>',
         '<div id="home-body">',
-          '<div class="home-greeting">Hey, Rat 👋</div>',
+          '<div class="home-greeting">' + greetingStr + '</div>',
           '<div class="home-date">' + dateStr + '</div>',
 
           '<div class="home-section-label">Upcoming plans</div>',
