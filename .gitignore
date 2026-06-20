@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment secrets — never commit these
+.env
+*.env
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
