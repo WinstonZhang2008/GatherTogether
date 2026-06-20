@@ -46,9 +46,10 @@
     var dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
 
     // ── Account Dynamic Greeting ──────────────────────────────────────────────
-    // Check for a globally available account object first, then fall back
-    var firstName = (window.account && window.account.firstName) || "";
-    var greetingStr = firstName ? 'Hey ' + firstName + ' 👋' : 'Hey there 👋';
+    var savedName = localStorage.getItem('gather_user_name');
+
+    var firstName = savedName ? savedName.trim() : "there";
+    var greetingStr = 'Hey ' + firstName + ' 👋';
 
     // ── HTML Injections ───────────────────────────────────────────────────────
     root.innerHTML = [
