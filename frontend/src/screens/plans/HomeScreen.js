@@ -45,6 +45,11 @@
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
 
+    // ── Account Dynamic Greeting ──────────────────────────────────────────────
+    // Check for a globally available account object first, then fall back
+    var firstName = (window.account && window.account.firstName) || "";
+    var greetingStr = firstName ? 'Hey ' + firstName + ' 👋' : 'Hey there 👋';
+
     // ── HTML Injections ───────────────────────────────────────────────────────
     root.innerHTML = [
       '<div id="home-page">',
@@ -53,7 +58,7 @@
           '<div class="home-avatar" id="home-logout-trigger">AJ</div>',
         '</div>',
         '<div id="home-body">',
-          '<div class="home-greeting">Hey, Rat 👋</div>',
+          '<div class="home-greeting">' + greetingStr + '</div>',
           '<div class="home-date">' + dateStr + '</div>',
 
           '<div class="home-section-label">Upcoming plans</div>',
