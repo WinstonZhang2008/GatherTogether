@@ -224,6 +224,9 @@
         .then(function (data) {
           setLoading(false);
           if (data.success) {
+            var initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase(); // Saves user initials
+            localStorage.setItem('gather_user_name', firstName);
+            localStorage.setItem('gather_user_initials', initials);
             alert('Account created successfully! Please log in.'); // Alert user of success
             localStorage.setItem('gather_user_name', firstName); // Saves user data globally
             if (typeof navigate === 'function') {
