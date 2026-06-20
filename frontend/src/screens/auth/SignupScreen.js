@@ -205,8 +205,6 @@
               navigate('home');
             } else if (typeof window.showHomeScreen === 'function') {
               window.showHomeScreen();
-            } else {
-              console.error("HomeScreen.js hasn't been loaded in index.html yet!");
             }
           } else {
             showError(data.message || 'Something went wrong. Please try again.');
