@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 from app.config import Config
 
 # these are created outside create_app() so that models can import
@@ -25,6 +26,7 @@ def create_app():
     # without an app, now we bind them to one.
     db.init_app(app)
     jwt.init_app(app)
+    CORS(app)
 
     # imported here (inside the function) to avoid circular imports.
     # if we imported at the top, routes would try to import db from
