@@ -36,12 +36,10 @@ def submit_availability(plan_id):
         db.session.commit()
         return jsonify({'message': 'Availability updated successfully'}), 200
     else:
-        # If this is their first time submitting, create a brand new record row.
-        new_avail = Availability(
-            plan_id=plan_id,
-            user_id=current_user_id,
-            available_slots=data['available_slots']
-        )
+        new_avail = Availability()
+        new_avail.plan_id = plan_id
+        new_avail.user_id = int(current_user_id)
+        new_avail.available_slots = data['available_slots']
         db.session.add(new_avail)
         db.session.commit()
         return jsonify({'message': 'Availability submitted successfully'}), 201

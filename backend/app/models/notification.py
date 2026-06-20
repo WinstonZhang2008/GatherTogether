@@ -1,5 +1,9 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 class Notification(db.Model):
     __tablename__ = 'notifications'
@@ -9,7 +13,7 @@ class Notification(db.Model):
     
     # Track if the user clicked it on their mobile phone screen yet
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     # LINKS: Connects to the receiver user and optional plan link
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

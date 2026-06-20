@@ -6,6 +6,8 @@
 
 from app.models.user import User
 from app.models.plan import Plan
-from app.models.poll import Poll
+from app.models.poll import Poll, PollOption, Vote
 from app.models.availability import Availability
 from app.models.notification import Notification
+
+__all__ = ['User', 'Plan', 'Poll', 'PollOption', 'Vote', 'Availability', 'Notification']
