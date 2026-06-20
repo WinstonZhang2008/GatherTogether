@@ -7,32 +7,29 @@ from app.models.user import User
 plans_bp = Blueprint('plans', __name__)
 
 
+def _serialize_plan(plan):
+    return {
+        'id': plan.id,
+        'title': plan.title,
+        'description': plan.description,
+        'location': plan.location,
+        'category': plan.category,
+        'status': plan.status,
+        'date_range_start': plan.date_range_start.isoformat() if plan.date_range_start else None,
+        'date_range_end': plan.date_range_end.isoformat() if plan.date_range_end else None,
+        'final_start_time': plan.final_start_time.isoformat() if plan.final_start_time else None,
+        'final_end_time': plan.final_end_time.isoformat() if plan.final_end_time else None,
+        'created_at': plan.created_at.isoformat() if plan.created_at else None,
+        'creator_id': plan.creator_id
+    }
+
+
 @plans_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_plans():
-    # get the logged in user's id from their token
     current_user_id = get_jwt_identity()
-
-    # get all plans where this user is the creator.
-    # filter_by() is like SQL WHERE — it narrows down the results.
     plans = Plan.query.filter_by(creator_id=current_user_id).all()
-
-    # we can't return Python objects directly — we need to convert
-    # each plan to a dict first. this is called serialization.
-    result = []
-    for plan in plans:
-        result.append({
-            'id': plan.id,
-            'title': plan.title,
-            'description': plan.description,
-            'location': plan.location,
-            'status': plan.status,
-            'final_start_time': plan.final_start_time,
-            'final_end_time': plan.final_end_time,
-            'created_at': plan.created_at
-        })
-
-    return jsonify(result), 200
+    return jsonify([_serialize_plan(p) for p in plans]), 200
 
 
 @plans_bp.route('/', methods=['POST'])
@@ -41,103 +38,98 @@ def create_plan():
     current_user_id = get_jwt_identity()
     data = request.get_json()
 
-    # validate required fields
     if not data.get('title'):
         return jsonify({'error': 'title is required'}), 400
 
-    new_plan = Plan(
-        title=data['title'],
-        description=data.get('description'),
-        location=data.get('location'),
-        status='planning',
-        # creator_id links this plan to the logged in user.
-        # we get this from the token so the frontend never
-        # needs to send it — users can't fake being someone else.
-        creator_id=current_user_id
-    )
+    new_plan = Plan()
+    new_plan.title = data['title']
+    new_plan.description = data.get('description')
+    new_plan.location = data.get('location')
+    new_plan.category = data.get('category')
+    new_plan.status = 'draft'
+    new_plan.creator_id = int(current_user_id)
+
+    # optional date range from the CreatePlanScreen date pickers
+    if data.get('date_range_start'):
+        from datetime import datetime
+        new_plan.date_range_start = datetime.fromisoformat(data['date_range_start'])
+    if data.get('date_range_end'):
+        from datetime import datetime
+        new_plan.date_range_end = datetime.fromisoformat(data['date_range_end'])
 
     db.session.add(new_plan)
     db.session.commit()
 
     return jsonify({
         'message': 'plan created successfully',
-        'plan': {
-            'id': new_plan.id,
-            'title': new_plan.title,
-            'status': new_plan.status,
-            'creator_id': new_plan.creator_id
-        }
+        'plan': _serialize_plan(new_plan)
     }), 201
 
 
-# <int:plan_id> is a URL parameter — it captures whatever number
-# is in the URL. so GET /api/plans/5 would set plan_id = 5.
 @plans_bp.route('/<int:plan_id>', methods=['GET'])
 @jwt_required()
 def get_plan(plan_id):
     current_user_id = get_jwt_identity()
+    plan = db.session.get(Plan, plan_id)
 
-    # get_or_404() looks up by id and automatically returns a
-    # 404 error if nothing is found — saves you writing that check.
-    plan = Plan.query.get_or_404(plan_id)
+    if not plan:
+        return jsonify({'error': 'plan not found'}), 404
 
-    # make sure the logged in user actually owns this plan.
-    # without this check anyone could read anyone else's plans.
     if str(plan.creator_id) != current_user_id:
         return jsonify({'error': 'unauthorized'}), 403
 
-    return jsonify({
-        'id': plan.id,
-        'title': plan.title,
-        'description': plan.description,
-        'location': plan.location,
-        'status': plan.status,
-        'final_start_time': plan.final_start_time,
-        'final_end_time': plan.final_end_time,
-        'created_at': plan.created_at,
-        'creator_id': plan.creator_id
-    }), 200
+    return jsonify(_serialize_plan(plan)), 200
 
 
 @plans_bp.route('/<int:plan_id>', methods=['PUT'])
 @jwt_required()
 def update_plan(plan_id):
     current_user_id = get_jwt_identity()
-    plan = Plan.query.get_or_404(plan_id)
+    plan = db.session.get(Plan, plan_id)
+
+    if not plan:
+        return jsonify({'error': 'plan not found'}), 404
 
     if str(plan.creator_id) != current_user_id:
         return jsonify({'error': 'unauthorized'}), 403
 
     data = request.get_json()
 
-    # only update fields that were actually sent.
-    # data.get() returns None if the key doesn't exist,
-    # so we use "or plan.field" to keep the existing value
-    # if nothing new was sent.
-    plan.title = data.get('title') or plan.title
-    plan.description = data.get('description') or plan.description
-    plan.location = data.get('location') or plan.location
-    plan.status = data.get('status') or plan.status
-    plan.final_start_time = data.get('final_start_time') or plan.final_start_time
-    plan.final_end_time = data.get('final_end_time') or plan.final_end_time
+    # only overwrite fields that were explicitly sent
+    for field in ('title', 'description', 'location', 'category', 'status'):
+        if data.get(field) is not None:
+            setattr(plan, field, data[field])
+
+    if data.get('date_range_start') is not None:
+        from datetime import datetime
+        plan.date_range_start = datetime.fromisoformat(data['date_range_start']) if data['date_range_start'] else None
+    if data.get('date_range_end') is not None:
+        from datetime import datetime
+        plan.date_range_end = datetime.fromisoformat(data['date_range_end']) if data['date_range_end'] else None
+    if data.get('final_start_time') is not None:
+        from datetime import datetime
+        plan.final_start_time = datetime.fromisoformat(data['final_start_time']) if data['final_start_time'] else None
+    if data.get('final_end_time') is not None:
+        from datetime import datetime
+        plan.final_end_time = datetime.fromisoformat(data['final_end_time']) if data['final_end_time'] else None
 
     db.session.commit()
 
-    return jsonify({'message': 'plan updated successfully'}), 200
+    return jsonify({'message': 'plan updated successfully', 'plan': _serialize_plan(plan)}), 200
 
 
 @plans_bp.route('/<int:plan_id>', methods=['DELETE'])
 @jwt_required()
 def delete_plan(plan_id):
     current_user_id = get_jwt_identity()
-    plan = Plan.query.get_or_404(plan_id)
+    plan = db.session.get(Plan, plan_id)
+
+    if not plan:
+        return jsonify({'error': 'plan not found'}), 404
 
     if str(plan.creator_id) != current_user_id:
         return jsonify({'error': 'unauthorized'}), 403
 
-    # cascade="all, delete-orphan" in the model means deleting
-    # a plan automatically deletes all its related availability,
-    # polls and notifications too — no orphaned data left behind.
     db.session.delete(plan)
     db.session.commit()
 
