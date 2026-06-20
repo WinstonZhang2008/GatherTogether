@@ -30,22 +30,18 @@ def create_poll(plan_id):
     if not data or not data.get('question') or not data.get('options'):
         return jsonify({'error': 'question and options list are required'}), 400
         
-    # 6. Stage the master Poll question block in the application's RAM
-    new_poll = Poll(
-        plan_id=plan_id,
-        question=data['question']
-    )
+    new_poll = Poll()
+    new_poll.plan_id = plan_id
+    new_poll.question = data['question']
     db.session.add(new_poll)
-    
-    # 7. CRITICAL STEP: db.session.flush() writes the poll row to the database *temporarily*
-    # without finalizing the save transaction. This generates an automated ID (e.g., Poll #12)
-    # which we instantly need below to map each voting option back to this parent poll.
-    db.session.flush() 
-    
-    # 8. Loop through the list of options (e.g., ["Friday 6pm", "Saturday 2pm"]) sent by frontend
+
+    # flush to get new_poll.id before creating options that reference it
+    db.session.flush()
+
     for option_text in data['options']:
-        # Assign each option text to our sub-table, linking it to the freshly flashed parent poll ID
-        option = PollOption(poll_id=new_poll.id, option_text=option_text)
+        option = PollOption()
+        option.poll_id = new_poll.id
+        option.option_text = option_text
         db.session.add(option)
         
     # 9. Commit both the Poll and all its options together safely in one transaction
@@ -73,8 +69,9 @@ def cast_vote(option_id):
         db.session.commit()
         return jsonify({'message': 'Vote removed successfully'}), 200
         
-    # If no previous vote exists, create a brand new Vote record mapping User ID -> Option ID
-    new_vote = Vote(option_id=option_id, user_id=current_user_id)
+    new_vote = Vote()
+    new_vote.option_id = option_id
+    new_vote.user_id = int(current_user_id)
     db.session.add(new_vote)
     db.session.commit()
     return jsonify({'message': 'Vote cast successfully'}), 201

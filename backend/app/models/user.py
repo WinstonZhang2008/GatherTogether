@@ -1,5 +1,9 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 # a Model is a Python class that represents a database table.
 # each attribute you define becomes a column in that table.
@@ -42,7 +46,7 @@ class User(db.Model):
     # server_default means the database itself sets this value
     # automatically when a new row is created — you don't have to
     # pass it in your code.
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     # relationship() doesn't create a column — it's just a convenience
     # that lets you do user.plans to get all plans belonging to this user

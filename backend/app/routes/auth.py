@@ -4,66 +4,44 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models.user import User
 
-# creates the blueprint. first argument is the name Flask uses
-# internally, second is standard __name__. this blueprint gets
-# registered in routes/__init__.py with the /api/auth prefix.
 auth_bp = Blueprint('auth', __name__)
 
 
-# @auth_bp.route defines a URL endpoint. the methods list tells
-# Flask which HTTP methods are allowed — POST means the frontend
-# is sending data to us (like a form submission).
-@auth_bp.route('/register', methods=['POST'])
-def register():
-    # request.get_json() reads the JSON body the frontend sends.
-    # e.g. { "name": "Jamie", "email": "jamie@email.com", "password": "abc123" }
+@auth_bp.route('/signup', methods=['POST'])
+def signup():
     data = request.get_json()
 
-    # basic validation — check required fields exist
-    if not data.get('email') or not data.get('password') or not data.get('name'):
-        # jsonify() converts a Python dict into a JSON response.
-        # the second argument is the HTTP status code —
-        # 400 means "bad request" (the client sent bad data).
-        return jsonify({'error': 'name, email and password are required'}), 400
+    # frontend sends firstName + lastName separately; combine them
+    first_name = (data.get('firstName') or '').strip()
+    last_name  = (data.get('lastName') or '').strip()
+    name       = (first_name + ' ' + last_name).strip() or data.get('name', '').strip()
 
-    # check if a user with this email already exists
-    existing_user = User.query.filter_by(email=data['email']).first()
-    if existing_user:
-        return jsonify({'error': 'email already registered'}), 409
+    email    = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
 
-    # never store plain text passwords. generate_password_hash()
-    # runs it through bcrypt so even if the database is breached,
-    # passwords are unreadable.
-    hashed_password = generate_password_hash(data['password'])
+    if not name or not email or not password:
+        return jsonify({'success': False, 'message': 'name, email and password are required'}), 400
 
-    # create a new User object — this doesn't hit the database yet,
-    # it just creates the Python object in memory.
-    new_user = User(
-        name=data['name'],
-        email=data['email'],
-        password_hash=hashed_password,
-        phone=data.get('phone'),
-        dietary_tags=data.get('dietary_tags'),
-        budget_range=data.get('budget_range'),
-        accessibility_needs=data.get('accessibility_needs')
-    )
+    if User.query.filter_by(email=email).first():
+        return jsonify({'success': False, 'message': 'email already registered'}), 409
 
-    # db.session.add() stages the new user to be saved.
-    # db.session.commit() actually writes it to the database.
-    # think of it like writing a document — add() is typing it,
-    # commit() is hitting save.
+    new_user = User()
+    new_user.name = name
+    new_user.email = email
+    new_user.password_hash = generate_password_hash(password)
+    new_user.phone = data.get('phone')
+    new_user.dietary_tags = data.get('dietary_tags')
+    new_user.budget_range = data.get('budget_range')
+    new_user.accessibility_needs = data.get('accessibility_needs')
+
     db.session.add(new_user)
     db.session.commit()
 
-    # create a JWT token for the new user so they're
-    # automatically logged in after registering.
-    # identity is what gets stored inside the token —
-    # we use the user's id so we can look them up later.
-    access_token = create_access_token(identity=str(new_user.id))
+    token = create_access_token(identity=str(new_user.id))
 
     return jsonify({
-        'message': 'user created successfully',
-        'access_token': access_token,
+        'success': True,
+        'token': token,
         'user': {
             'id': new_user.id,
             'name': new_user.name,
@@ -76,24 +54,23 @@ def register():
 def login():
     data = request.get_json()
 
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'error': 'email and password are required'}), 400
+    email    = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
 
-    # look up the user by email
-    user = User.query.filter_by(email=data['email']).first()
+    if not email or not password:
+        return jsonify({'success': False, 'message': 'email and password are required'}), 400
 
-    # check_password_hash() compares the plain password the user
-    # typed against the stored hash. if user doesn't exist or
-    # password is wrong we return the same vague error — we don't
-    # want to tell attackers which one was wrong.
-    if not user or not check_password_hash(user.password_hash, data['password']):
-        return jsonify({'error': 'invalid email or password'}), 401
+    user = User.query.filter_by(email=email).first()
 
-    # 401 means "unauthorized" — the user isn't authenticated.
-    access_token = create_access_token(identity=str(user.id))
+    # same vague error whether email or password is wrong — don't leak which
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({'success': False, 'message': 'invalid email or password'}), 401
+
+    token = create_access_token(identity=str(user.id))
 
     return jsonify({
-        'access_token': access_token,
+        'success': True,
+        'token': token,
         'user': {
             'id': user.id,
             'name': user.name,
@@ -102,16 +79,11 @@ def login():
     }), 200
 
 
-# @jwt_required() protects this route — if the request doesn't
-# include a valid JWT token in the header, Flask automatically
-# returns a 401 before your code even runs.
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-    # get_jwt_identity() reads the identity we stored in the token
-    # when the user logged in — which is their user id.
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = db.session.get(User, int(current_user_id))
 
     if not user:
         return jsonify({'error': 'user not found'}), 404
@@ -121,7 +93,50 @@ def get_current_user():
         'name': user.name,
         'email': user.email,
         'phone': user.phone,
+        'photo_url': user.photo_url,
         'dietary_tags': user.dietary_tags,
         'budget_range': user.budget_range,
         'accessibility_needs': user.accessibility_needs
+    }), 200
+
+
+@auth_bp.route('/me', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    current_user_id = get_jwt_identity()
+    user = db.session.get(User, int(current_user_id))
+
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+
+    data = request.get_json()
+
+    # only update fields that were explicitly sent; None means "not sent"
+    if data.get('name') is not None:
+        user.name = data['name'].strip()
+    if data.get('phone') is not None:
+        user.phone = data['phone']
+    if data.get('photo_url') is not None:
+        user.photo_url = data['photo_url']
+    if data.get('dietary_tags') is not None:
+        user.dietary_tags = data['dietary_tags']
+    if data.get('budget_range') is not None:
+        user.budget_range = data['budget_range']
+    if data.get('accessibility_needs') is not None:
+        user.accessibility_needs = data['accessibility_needs']
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'phone': user.phone,
+            'photo_url': user.photo_url,
+            'dietary_tags': user.dietary_tags,
+            'budget_range': user.budget_range,
+            'accessibility_needs': user.accessibility_needs
+        }
     }), 200
