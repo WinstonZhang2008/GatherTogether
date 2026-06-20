@@ -67,6 +67,7 @@
           '<h1 class="su-heading">Create your account</h1>',
           '<p class="su-sub">Already have one? <span class="su-link" id="su-goto-login">Log in</span></p>',
 
+          // Name fields in a row
           '<div class="su-row">',
             '<div class="su-field">',
               '<label for="su-firstname">First name</label>',
@@ -80,12 +81,15 @@
             '</div>',
           '</div>',
 
+
+          // Email field
           '<div class="su-field">',
             '<label for="su-email">Email</label>',
             '<div class="su-input-wrap"><input type="email" id="su-email" placeholder="you@example.com" autocomplete="email" /></div>',
             '<div class="su-field-err" id="su-email-err">Enter a valid email address.</div>',
           '</div>',
 
+          // Password field with toggle
           '<div class="su-field">',
             '<label for="su-password">Password</label>',
             '<div class="su-input-wrap">',
@@ -95,6 +99,15 @@
               '</button>',
             '</div>',
             '<div class="su-field-err" id="su-pw-err">Password must be at least 10 characters.</div>',
+          '</div>',
+
+          // Confirm password field
+          '<div class="su-field">',
+            '<label for="su-confirm-password">Confirm Password</label>',
+            '<div class="su-input-wrap">',
+              '<input type="password" id="su-confirm-password" placeholder="Repeat your password" autocomplete="new-password" />',
+            '</div>',
+            '<div class="su-field-err" id="su-confirm-pw-err">Passwords do not match.</div>',
           '</div>',
 
           '<p class="su-terms">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>',
@@ -115,6 +128,8 @@
     var lastNameInput  = document.getElementById('su-lastname');
     var emailInput     = document.getElementById('su-email');
     var passwordInput  = document.getElementById('su-password');
+    var confirmPasswordInput = document.getElementById('su-confirm-password');
+    var confirmPwErr        = document.getElementById('su-confirm-pw-err');
     var firstNameErr   = document.getElementById('su-firstname-err');
     var lastNameErr    = document.getElementById('su-lastname-err');
     var emailErr       = document.getElementById('su-email-err');
@@ -165,6 +180,13 @@
       return ok;
     }
 
+    function validateConfirmPassword() {
+      var ok = confirmPasswordInput.value === passwordInput.value && confirmPasswordInput.value.length > 0;
+      if (!ok) { confirmPasswordInput.classList.add('su-invalid'); confirmPwErr.style.display = 'block'; }
+      else      { confirmPasswordInput.classList.remove('su-invalid'); confirmPwErr.style.display = 'none'; }
+      return ok;
+    }
+
     function showError(msg) {
       errorText.textContent     = msg;
       errorBanner.style.display = 'flex';
@@ -185,6 +207,7 @@
         req(lastNameInput,  lastNameErr),
         validateEmail(),
         validatePassword(),
+        validateConfirmPassword(),
       ].every(Boolean);
 
       if (!ok) return;
