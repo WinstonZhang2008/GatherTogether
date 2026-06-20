@@ -53,7 +53,7 @@
           '<div class="home-avatar" id="home-logout-trigger">AJ</div>',
         '</div>',
         '<div id="home-body">',
-          '<div class="home-greeting">Hey, Alex 👋</div>',
+          '<div class="home-greeting">Hey, Rat 👋</div>',
           '<div class="home-date">' + dateStr + '</div>',
 
           '<div class="home-section-label">Upcoming plans</div>',
@@ -99,11 +99,9 @@
     // Floating Action Button
     document.getElementById('home-fab').addEventListener('click', function () {
       if (typeof navigate === 'function') {
-        navigate('create-plan');
+        navigate('createPlan');;
       } else if (typeof window.showCreatePlanScreen === 'function') {
         window.showCreatePlanScreen();
-      } else {
-        alert('New plan flow coming soon!');
       }
     });
 

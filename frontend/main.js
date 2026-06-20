@@ -35,6 +35,9 @@ function navigate(screen) {
     case 'home':
       showHomeScreen(root, navigate);
       break;
+    case 'createPlan':
+      showCreatePlanScreen(root, navigate);
+      break;
     default:
       root.innerHTML = '<p style="padding:40px;color:#C0392B;">Screen "' + screen + '" not found.</p>';
   }
