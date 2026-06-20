@@ -89,12 +89,12 @@
           '<div class="su-field">',
             '<label for="su-password">Password</label>',
             '<div class="su-input-wrap">',
-              '<input type="password" id="su-password" placeholder="At least 8 characters" autocomplete="new-password" style="padding-right:42px;" />',
+              '<input type="password" id="su-password" placeholder="At least 10 characters" autocomplete="new-password" style="padding-right:42px;" />',
               '<button class="su-pw-btn" id="su-pw-toggle" type="button" aria-label="Show password">',
                 '<svg id="su-eye" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/></svg>',
               '</button>',
             '</div>',
-            '<div class="su-field-err" id="su-pw-err">Password must be at least 8 characters.</div>',
+            '<div class="su-field-err" id="su-pw-err">Password must be at least 10 characters.</div>',
           '</div>',
 
           '<p class="su-terms">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>',
@@ -159,7 +159,7 @@
     }
 
     function validatePassword() {
-      var ok = passwordInput.value.length >= 8;
+      var ok = passwordInput.value.length >= 10;
       if (!ok) { passwordInput.classList.add('su-invalid'); pwErr.style.display = 'block'; }
       else      { passwordInput.classList.remove('su-invalid'); pwErr.style.display = 'none'; }
       return ok;
@@ -201,10 +201,12 @@
         .then(function (data) {
           setLoading(false);
           if (data.success) {
+            alert('Account created successfully! Please log in.'); // Alert user of success
+            localStorage.setItem('gather_user_name', firstName); // Saves user data globally
             if (typeof navigate === 'function') {
-              navigate('home');
-            } else if (typeof window.showHomeScreen === 'function') {
-              window.showHomeScreen();
+              navigate('login');
+            } else if (typeof window.showLoginScreen === 'function') {
+              window.showLoginScreen();
             }
           } else {
             showError(data.message || 'Something went wrong. Please try again.');
