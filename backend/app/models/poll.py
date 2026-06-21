@@ -14,7 +14,7 @@ class Poll(db.Model):
     is_closed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=_utcnow)
 
-    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
 
     # one poll has many options; deleting the poll wipes its options and votes
     options = db.relationship('PollOption', backref='poll', lazy=True, cascade='all, delete-orphan')
@@ -43,8 +43,8 @@ class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=_utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    option_id = db.Column(db.Integer, db.ForeignKey('poll_options.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    option_id = db.Column(db.Integer, db.ForeignKey('poll_options.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f'<Vote user:{self.user_id} option:{self.option_id}>'

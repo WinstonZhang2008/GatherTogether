@@ -29,6 +29,10 @@ class User(db.Model):
     # the route file will handle the hashing logic.
     password_hash = db.Column(db.String(255), nullable=False)
 
+    # False until the user clicks the verification link in their email.
+    # server_default='true' so existing DB rows stay accessible.
+    is_verified = db.Column(db.Boolean, default=False, server_default='true', nullable=False)
+
     phone = db.Column(db.String(20), nullable=True)
     photo_url = db.Column(db.String(255), nullable=True)
 
