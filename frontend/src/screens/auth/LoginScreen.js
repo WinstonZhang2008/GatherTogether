@@ -142,13 +142,13 @@
               '<div class="g-field-err" id="g-pw-err">Password must be at least 8 characters.</div>',
             '</div>',
 
-            '<div class="g-forgot"><a href="#">Forgot password?</a></div>',
+            '<div class="g-forgot"><a href="#" id="g-forgot-link">Forgot password?</a></div>',
 
             '<button id="g-submit" type="button"><span id="g-btn-text">Log in</span><span id="g-spinner"></span></button>',
 
             '<div class="g-divider">or continue with</div>',
 
-            '<button class="g-social" id="g-google-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908C16.658 14.233 17.64 11.925 17.64 9.2z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Continue with Google</button>',
+            '<div id="g-google-btn" style="margin-bottom:10px;display:flex;justify-content:center;min-height:44px;"></div>',
             '<button class="g-social" id="g-apple-btn"><svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M13.057 9.545c-.02-2.082 1.7-3.09 1.778-3.138-1.002-1.44-2.512-1.618-3.047-1.631-1.285-.134-2.527.763-3.182.763-.666 0-1.677-.75-2.762-.728C4.26 4.832 2.767 5.83 1.942 7.346.266 10.397 1.508 14.89 3.12 17.347c.81 1.177 1.775 2.492 3.04 2.445 1.224-.05 1.682-.787 3.16-.787 1.467 0 1.886.787 3.17.76 1.319-.023 2.148-1.179 2.94-2.364.94-1.358 1.321-2.686 1.34-2.754-.03-.012-2.56-.978-2.582-3.102z"/><path d="M10.906 2.76C11.565 1.962 12.01.87 11.876-.252 10.93-.205 9.79.392 9.101 1.175c-.617.695-1.162 1.828-1.015 2.895.996.074 2.02-.504 2.82-1.31z"/></svg>Continue with Apple</button>',
 
             '<div id="g-success">',
@@ -275,12 +275,46 @@
         });
     });
 
-    // Social buttons
-    document.getElementById('g-google-btn').addEventListener('click', function () {
-      alert('Connect your Google OAuth provider here.');
-    });
+    // Google Sign-In button
+    (function tryRenderGoogle() {
+      if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+        setTimeout(tryRenderGoogle, 150);
+        return;
+      }
+      var container = document.getElementById('g-google-btn');
+      if (!container) return;
+      google.accounts.id.initialize({
+        client_id: window.GOOGLE_CLIENT_ID,
+        callback: function (response) {
+          window.api.googleAuth(response.credential)
+            .then(function (data) {
+              if (data.success) {
+                var children = card.children;
+                for (var i = 0; i < children.length; i++) children[i].style.display = 'none';
+                successEl.style.display = 'flex';
+                setTimeout(function () { window.showHomeScreen(); }, 1200);
+              } else {
+                showError(data.message || 'Google sign-in failed. Try again.');
+              }
+            })
+            .catch(function () { showError('Could not reach the server. Please try again.'); });
+        }
+      });
+      google.accounts.id.renderButton(container, {
+        theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular',
+        width: container.parentElement ? container.parentElement.offsetWidth : 368
+      });
+    })();
     document.getElementById('g-apple-btn').addEventListener('click', function () {
       alert('Connect your Apple OAuth provider here.');
+    });
+
+    // Forgot password link
+    document.getElementById('g-forgot-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      if (typeof window.showForgotPasswordScreen === 'function') {
+        window.showForgotPasswordScreen();
+      }
     });
 
     // LoginScreen --> SignupScreen

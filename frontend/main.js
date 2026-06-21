@@ -35,6 +35,9 @@ function navigate(screen) {
     case 'home':
       showHomeScreen(root, navigate);
       break;
+    case 'forgot-password':
+      showForgotPasswordScreen(root, navigate);
+      break;
     case 'createPlan':
       showCreatePlanScreen(root, navigate);
       break;

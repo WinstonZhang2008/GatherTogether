@@ -8,12 +8,17 @@
   <body>
     <div id="root"></div>
 
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>window.GOOGLE_CLIENT_ID = '683588084816-4gvhdva6vq38aoc5uhtv6qcfpvgl0ib2.apps.googleusercontent.com';</script>
+
     <!-- Screens – add new ones here as you build them -->
     <script src="src/services/AuthContext.js"></script>
     <script src="src/services/api.js"></script>
 
     <script type="module" src="src/screens/auth/LoginScreen.js"></script>
     <script type="module" src="src/screens/auth/SignupScreen.js"></script>
+    <script type="module" src="src/screens/auth/ForgotPasswordScreen.js"></script>
     <script type="module" src="src/screens/plans/CreatePlanScreen.js"></script>
     <script type="module" src="src/screens/plans/HomeScreen.js"></script>
 

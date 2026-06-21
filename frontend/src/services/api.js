@@ -35,6 +35,30 @@ window.api = {
     });
   },
 
+  googleAuth: function(credential) {
+    return fetch(API_URL + '/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: credential })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success && data.token) {
+        window.auth.saveToken(data.token);
+      }
+      return data;
+    });
+  },
+
+  forgotPassword: function(email) {
+    return fetch(API_URL + '/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    })
+    .then(function(res) { return res.json(); });
+  },
+
   // ── Protected routes (token attached automatically) ────────────────────
 
   getPlans: function() {
