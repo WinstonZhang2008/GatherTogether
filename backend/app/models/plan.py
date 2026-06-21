@@ -30,7 +30,7 @@ class Plan(db.Model):
 
     created_at = db.Column(db.DateTime, default=_utcnow)
 
-    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
 
     availabilities = db.relationship('Availability', backref='plan', lazy=True, cascade='all, delete-orphan')
     polls = db.relationship('Poll', backref='plan', lazy=True, cascade='all, delete-orphan')
