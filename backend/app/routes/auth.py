@@ -1,11 +1,14 @@
 import secrets
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import re
+from datetime import timedelta
+from flask import Blueprint, request, jsonify, current_app, redirect
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
 from werkzeug.security import generate_password_hash, check_password_hash
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from app import db
 from app.models.user import User
+from app.utils.email import send_welcome_email, send_verification_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -14,7 +17,6 @@ auth_bp = Blueprint('auth', __name__)
 def signup():
     data = request.get_json()
 
-    # frontend sends firstName + lastName separately; combine them
     first_name = (data.get('firstName') or '').strip()
     last_name  = (data.get('lastName') or '').strip()
     name       = (first_name + ' ' + last_name).strip() or data.get('name', '').strip()
@@ -25,32 +27,74 @@ def signup():
     if not name or not email or not password:
         return jsonify({'success': False, 'message': 'name, email and password are required'}), 400
 
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        return jsonify({'success': False, 'message': 'Please enter a valid email address.'}), 400
+
     if User.query.filter_by(email=email).first():
-        return jsonify({'success': False, 'message': 'email already registered'}), 409
+        return jsonify({'success': False, 'message': 'An account with that email already exists.'}), 409
 
     new_user = User()
-    new_user.name = name
-    new_user.email = email
+    new_user.name          = name
+    new_user.email         = email
     new_user.password_hash = generate_password_hash(password)
-    new_user.phone = data.get('phone')
-    new_user.dietary_tags = data.get('dietary_tags')
-    new_user.budget_range = data.get('budget_range')
+    new_user.is_verified   = False
+    new_user.phone         = data.get('phone')
+    new_user.dietary_tags  = data.get('dietary_tags')
+    new_user.budget_range  = data.get('budget_range')
     new_user.accessibility_needs = data.get('accessibility_needs')
 
     db.session.add(new_user)
     db.session.commit()
 
-    token = create_access_token(identity=str(new_user.id))
+    verify_token = create_access_token(
+        identity=str(new_user.id),
+        additional_claims={'purpose': 'email_verification'},
+        expires_delta=timedelta(hours=24)
+    )
+    send_verification_email(new_user.email, new_user.name, verify_token)
 
     return jsonify({
         'success': True,
-        'token': token,
-        'user': {
-            'id': new_user.id,
-            'name': new_user.name,
-            'email': new_user.email
-        }
+        'requiresVerification': True,
+        'message': 'Account created! Check your email to verify your account before logging in.'
     }), 201
+
+
+@auth_bp.route('/verify/<token>', methods=['GET'])
+def verify_email(token):
+    try:
+        decoded = decode_token(token)
+        if decoded.get('purpose') != 'email_verification':
+            raise ValueError('wrong purpose')
+        user_id = int(decoded['sub'])
+    except Exception:
+        return '''
+        <html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#F6FAF8;">
+          <h2 style="color:#C0392B;">Invalid or expired link</h2>
+          <p>This verification link has expired or is invalid.</p>
+          <a href="http://127.0.0.1:5500/GatherTogether/frontend/index.html" style="color:#1D9E75;">Back to Gather</a>
+        </body></html>
+        ''', 400
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return redirect('http://127.0.0.1:5500/GatherTogether/frontend/index.html')
+
+    user.is_verified = True
+    db.session.commit()
+
+    return '''
+    <html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#F6FAF8;">
+      <div style="max-width:400px;margin:0 auto;">
+        <div style="width:64px;height:64px;background:#E1F5EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 14l6 6 10-10" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 style="font-family:sans-serif;color:#111714;margin-bottom:8px;">Email confirmed!</h2>
+        <p style="color:#4A5751;margin-bottom:28px;">Your account is now active. You can log in to Gather.</p>
+        <a href="http://127.0.0.1:5500/GatherTogether/frontend/index.html" style="background:#1D9E75;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;">Log in to Gather</a>
+      </div>
+    </body></html>
+    '''
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -65,20 +109,18 @@ def login():
 
     user = User.query.filter_by(email=email).first()
 
-    # same vague error whether email or password is wrong — don't leak which
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'success': False, 'message': 'invalid email or password'}), 401
+
+    if not user.is_verified:
+        return jsonify({'success': False, 'message': 'Please verify your email before logging in. Check your inbox for the confirmation link.'}), 403
 
     token = create_access_token(identity=str(user.id))
 
     return jsonify({
         'success': True,
         'token': token,
-        'user': {
-            'id': user.id,
-            'name': user.name,
-            'email': user.email
-        }
+        'user': {'id': user.id, 'name': user.name, 'email': user.email}
     }), 200
 
 
@@ -111,8 +153,10 @@ def google_auth():
         user.email         = email
         user.name          = name
         user.password_hash = generate_password_hash(secrets.token_hex(32))
+        user.is_verified   = True
         db.session.add(user)
         db.session.commit()
+        send_welcome_email(user.email, user.name)
 
     token = create_access_token(identity=str(user.id))
     return jsonify({
@@ -130,12 +174,9 @@ def forgot_password():
     if not email:
         return jsonify({'success': False, 'message': 'email is required'}), 400
 
-    # Always return success — don't reveal whether the email exists
     user = User.query.filter_by(email=email).first()
     if user:
         # TODO: generate a time-limited reset token and email it
-        # reset_token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=30))
-        # send_password_reset_email(user.email, reset_token)
         pass
 
     return jsonify({'success': True, 'message': 'If that email is registered, a reset link has been sent.'}), 200
@@ -173,7 +214,6 @@ def update_profile():
 
     data = request.get_json()
 
-    # only update fields that were explicitly sent; None means "not sent"
     if data.get('name') is not None:
         user.name = data['name'].strip()
     if data.get('phone') is not None:
