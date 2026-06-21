@@ -30,6 +30,13 @@ def signup():
     if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
         return jsonify({'success': False, 'message': 'Please enter a valid email address.'}), 400
 
+    if (len(password) < 8 or
+            not re.search(r'[A-Z]', password) or
+            not re.search(r'[a-z]', password) or
+            not re.search(r'[0-9]', password) or
+            not re.search(r'[^A-Za-z0-9]', password)):
+        return jsonify({'success': False, 'message': 'Password must be 8+ characters with an uppercase letter, lowercase letter, number, and symbol.'}), 400
+
     if User.query.filter_by(email=email).first():
         return jsonify({'success': False, 'message': 'An account with that email already exists.'}), 409
 
