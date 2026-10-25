@@ -1,3 +1,4 @@
+**Status:** Built summer 2026 as a side project with friends. The backend (auth, plans, polls, availability, notifications) is functional; the React Native frontend is partial. Not deployed.
 # Gather — Group Planning App
 
 A lightweight mobile app that eliminates the chaos of coordinating plans over text. Create a plan, invite friends, sync availability, vote on a venue, and confirm — all in one place.
