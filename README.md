@@ -1,8 +1,8 @@
 # Gather — Group Planning App
+
+A lightweight mobile app that eliminates the chaos of coordinating plans over text. Create a plan, invite friends, sync availability, vote on a venue, and confirm, all in one place.
+
 **Status:** Built summer 2026 as a side project with friends. The backend (auth, plans, polls, availability, notifications) is functional; the React Native frontend is partial. Not deployed.
-
-
-A lightweight mobile app that eliminates the chaos of coordinating plans over text. Create a plan, invite friends, sync availability, vote on a venue, and confirm — all in one place.
 
 ---
 
@@ -13,10 +13,8 @@ A lightweight mobile app that eliminates the chaos of coordinating plans over te
 | Frontend | React Native |
 | Backend | Flask (Python) |
 | Database | PostgreSQL (Supabase) |
-| Auth | JWT (flask-jwt-extended) |
-| Real-time | Supabase Realtime |
-| Notifications | Expo Push + Twilio |
-| Calendar | Google Calendar API |
+| Auth | JWT (flask-jwt-extended), Google OAuth |
+| Email | Flask-Mail (verification, password reset) |
 
 ---
 
@@ -29,10 +27,9 @@ GatherTogether/
 │   │   ├── __init__.py         # Flask app factory
 │   │   ├── config.py           # Environment config
 │   │   ├── models/
-│   │   │   ├── __init__.py
 │   │   │   ├── user.py
 │   │   │   ├── plan.py
-│   │   │   ├── poll.py
+│   │   │   ├── poll.py         # Poll, PollOption, Vote
 │   │   │   ├── availability.py
 │   │   │   └── notification.py
 │   │   ├── routes/
@@ -43,11 +40,11 @@ GatherTogether/
 │   │   │   ├── availability.py
 │   │   │   └── notifications.py
 │   │   └── utils/
-│   │       ├── __init__.py
-│   │       └── helpers.py
+│   │       ├── helpers.py
+│   │       └── email.py
 │   ├── main.py
 │   ├── requirements.txt
-│   └── .env
+│   └── .env.example
 └── frontend/
     └── src/
         ├── components/
@@ -57,24 +54,31 @@ GatherTogether/
         │   └── AppNavigator.js
         ├── screens/
         │   ├── auth/
-        │   │   ├── LoginScreen.js
-        │   │   └── SignupScreen.js
         │   ├── plans/
-        │   │   ├── HomeScreen.js
-        │   │   ├── CreatePlanScreen.js
-        │   │   └── PlanDetailScreen.js
         │   ├── availability/
-        │   │   └── AvailabilityScreen.js
         │   ├── polls/
-        │   │   └── PollScreen.js
         │   └── profile/
-        │       └── ProfileScreen.js
         ├── services/
-        │   ├── api.js
-        │   └── auth.js
+        │   └── api.js
         └── utils/
             └── helpers.js
 ```
+
+---
+
+## Data Model
+
+| Table | Key fields | Relationships |
+|-------|-----------|---------------|
+| users | name, email (unique), password_hash, is_verified, dietary_tags, budget_range | creator of plans |
+| plans | title, description, location, category, date range, final time, status | belongs to a user; has availabilities, polls, notifications |
+| availabilities | available_slots (JSON), note | belongs to a user and a plan |
+| polls | question, is_closed | belongs to a plan; has options |
+| poll_options | option_text | belongs to a poll; has votes |
+| votes | created_at | belongs to a user and an option |
+| notifications | message, type, is_read | belongs to a user; optionally to a plan |
+
+All child rows cascade on delete.
 
 ---
 
@@ -84,14 +88,14 @@ GatherTogether/
 - Python 3.11+
 - Node.js
 - Expo CLI
-- A Supabase account
+- A Supabase account (or any PostgreSQL database)
 
 ### Backend Setup
 
-1. Clone the repo:
+1. Clone and enter the backend:
 ```bash
-git clone https://github.com/yourname/gathertogether.git
-cd gathertogether/backend
+git clone https://github.com/WinstonZhang2008/GatherTogether.git
+cd GatherTogether/backend
 ```
 
 2. Install dependencies:
@@ -99,11 +103,15 @@ cd gathertogether/backend
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the `backend/` folder:
+3. Create a `.env` file in `backend/` (see `.env.example`):
 ```
 SECRET_KEY=your_secret_key_here
-DATABASE_URL=postgresql://postgres:yourpassword@db.xxxx.supabase.co:5432/postgres
 JWT_SECRET_KEY=your_jwt_secret_key_here
+DATABASE_URL=postgresql://postgres:password@db.xxxx.supabase.co:5432/postgres
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+MAIL_USERNAME=your_gmail_address
+MAIL_PASSWORD=your_gmail_app_password
 ```
 
 4. Run the server:
@@ -111,22 +119,13 @@ JWT_SECRET_KEY=your_jwt_secret_key_here
 python main.py
 ```
 
-The backend will be running at `http://127.0.0.1:5000`
+The backend runs at `http://127.0.0.1:5000`.
 
 ### Frontend Setup
 
-1. Navigate to the frontend folder:
 ```bash
-cd gathertogether/frontend
-```
-
-2. Install dependencies:
-```bash
+cd GatherTogether/frontend
 npm install
-```
-
-3. Start the app:
-```bash
 npx expo start
 ```
 
@@ -134,59 +133,51 @@ npx expo start
 
 ## API Endpoints
 
-### Auth
-| Method | Endpoint | Description | Auth required |
-|--------|----------|-------------|---------------|
-| POST | /api/auth/register | Create a new account | No |
-| POST | /api/auth/login | Sign in | No |
-| GET | /api/auth/me | Get current user | Yes |
+All protected routes expect an `Authorization: Bearer <token>` header.
 
-### Plans
-| Method | Endpoint | Description | Auth required |
-|--------|----------|-------------|---------------|
-| GET | /api/plans/ | Get all your plans | Yes |
-| POST | /api/plans/ | Create a new plan | Yes |
-| GET | /api/plans/:id | Get one plan | Yes |
-| PUT | /api/plans/:id | Update a plan | Yes |
-| DELETE | /api/plans/:id | Delete a plan | Yes |
+### Auth (`/auth`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/auth/signup` | Create an account; sends a verification email | No |
+| GET | `/auth/verify/<token>` | Verify an email address | No |
+| POST | `/auth/login` | Sign in; returns a JWT | No |
+| POST | `/auth/google` | Sign in with a Google ID token | No |
+| POST | `/auth/forgot-password` | Send a password reset email | No |
+| GET | `/auth/me` | Get the current user | Yes |
+| PUT | `/auth/me` | Update the current user's profile | Yes |
 
-### Availability
-| Method | Endpoint | Description | Auth required |
-|--------|----------|-------------|---------------|
-| POST | /api/availability/ | Submit your availability | Yes |
-| GET | /api/availability/:plan_id | Get availability for a plan | Yes |
+### Plans (`/plans`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/plans/` | List the current user's plans | Yes |
+| POST | `/plans/` | Create a plan | Yes |
+| GET | `/plans/<plan_id>` | Get one plan | Yes |
+| PUT | `/plans/<plan_id>` | Update a plan | Yes |
+| DELETE | `/plans/<plan_id>` | Delete a plan | Yes |
 
-### Polls
-| Method | Endpoint | Description | Auth required |
-|--------|----------|-------------|---------------|
-| POST | /api/polls/ | Create a poll | Yes |
-| GET | /api/polls/:plan_id | Get polls for a plan | Yes |
-| POST | /api/polls/:id/vote | Cast a vote | Yes |
+### Availability (`/availability`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/availability/<plan_id>` | Submit or replace your availability | Yes |
+| GET | `/availability/<plan_id>` | Get every participant's availability | Yes |
+| DELETE | `/availability/<plan_id>` | Remove your availability | Yes |
 
-### Notifications
-| Method | Endpoint | Description | Auth required |
-|--------|----------|-------------|---------------|
-| GET | /api/notifications/ | Get your notifications | Yes |
-| PUT | /api/notifications/:id/read | Mark as read | Yes |
+### Polls (`/polls`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/polls/<plan_id>` | Create a poll with options | Yes |
+| POST | `/polls/vote/<option_id>` | Cast a vote, or remove it if already cast | Yes |
+| GET | `/polls/<plan_id>` | Get poll results with vote tallies | Yes |
+
+### Notifications (`/notifications`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/notifications/` | List notifications | Yes |
+| PUT | `/notifications/<id>/read` | Mark one as read | Yes |
+| PUT | `/notifications/read-all` | Mark all as read | Yes |
 
 ---
 
 ## Team
 
-| Person | Responsibility |
-|--------|---------------|
-| Dev 1 | Backend — API, database, auth, notifications |
-| Dev 2 | Frontend — screens, navigation, UI components |
-| Dev 3 | Features — real-time sync, calendar API, polls |
-
----
-
-## Development Timeline
-
-| Phase | Weeks | Goals |
-|-------|-------|-------|
-| Setup | 1–2 | Repo, design system, DB schema, auth, navigation |
-| MVP | 3–5 | Create plan, invite flow, availability picker |
-| Core features | 6–8 | Polls, voting, notifications, confirmed plan view |
-| Polish | 9–10 | Preferences, dietary flags, calendar export, bug fixes |
-| Launch | 11–12 | AI suggestions, expense split, deploy to stores |
+Three-person project. I built the backend: the database schema, the REST API, JWT and Google OAuth authentication, email verification and password reset, and the notification system. My teammates built the React Native frontend.
